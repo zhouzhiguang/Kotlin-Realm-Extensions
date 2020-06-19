@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.widget.TextView
 import com.vicpin.kotlinrealmextensions.R
 import com.vicpin.kotlinrealmextensions.extensions.isMainThread
@@ -12,12 +13,12 @@ import com.vicpin.kotlinrealmextensions.extensions.wait
 import com.vicpin.kotlinrealmextensions.model.Address
 import com.vicpin.kotlinrealmextensions.model.Item
 import com.vicpin.kotlinrealmextensions.model.User
-import com.vicpin.krealmextensions.deleteAll
-import com.vicpin.krealmextensions.getRealmInstance
-import com.vicpin.krealmextensions.queryAll
-import com.vicpin.krealmextensions.queryAllAsFlowable
-import com.vicpin.krealmextensions.saveAll
+import com.vicpin.kotlinrealmextensions.model.UserModule
+import com.vicpin.krealmextensions.*
+import io.reactivex.SingleObserver
+import io.reactivex.disposables.Disposable
 import io.realm.Realm
+import io.realm.Sort
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -28,7 +29,19 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        test.setOnClickListener {
+            populateUserDb(2)
+            var list = User().queryAll()
+            list.forEachIndexed { index, user ->
+                Log.e("查询结果出来：", user.name)
+                Log.e("查询结果出来：", user.address!!.city)
+                Log.e("查询结果出来：", user.address!!.street)
+                Log.e("查询结果出来：", user.address!!.zip)
+            }
+           Log.e("查询结果出来：", list.size.toString())
 
+
+        }
         //***********************************
         //See tests for complete usage
         //***********************************
@@ -150,11 +163,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun populateUserDb(numUsers: Int) {
-        Array(numUsers) { User("name_%d".format(it), Address("street_%d".format(it))) }.saveAll()
+        Array(numUsers) {
+            Log.e("看看IT", it.toString())
+            User("name_%s".format("周老师"), Address("street_%d".format(it), "东莞", "松山湖"))
+        }.saveAll()
     }
 
     private fun populateDB(numItems: Int) {
         Array(numItems) { Item() }.saveAll()
+
+        val firstEvent = Item().queryFirst() //Or val first = queryFirst<Event>
+//        Item().query { equalTo() }
+//        Item().querySorted("name", Sort.DESCENDING)
+        var result = Item().queryAllAsSingle()
+        // Item().query { equalTo() }
+
+        result.subscribe(object : SingleObserver<List<Item>> {
+
+
+            override fun onSubscribe(d: Disposable) {
+
+            }
+
+            override fun onError(e: Throwable) {
+
+            }
+
+            override fun onSuccess(t: List<Item>) {
+                //查询成功
+            }
+
+        })
+//      var list= Item().queryAll()
+//        Item().queryAndUpdate(Item(),)
     }
 
     private fun addMessage(message: String, important: Boolean = false) {
